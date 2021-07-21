@@ -1,24 +1,79 @@
 # README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+- Create a login route
+  `post 'login', to: 'authentication#login'`
 
-Things you may want to cover:
+- Create a login controller and action
+  `rails g controller authentication`
 
-* Ruby version
+  ```
+  def login
+  end
+  ```
 
-* System dependencies
+- Look up user (by their username)
 
-* Configuration
+```
+def login
+    @user = User.find_by({ username: params[:username] })
 
-* Database creation
+    if !@user
+        render json: { error: 'No user by that name.' }, status: :unauthorized
+    else
+    end
+end
+```
 
-* Database initialization
+- Authenticate the user (check that their password is okay)
 
-* How to run the test suite
+```
+def login
+    <!-- We look up the user -->
+    @user = User.find_by({ username: params[:username] })
 
-* Services (job queues, cache servers, search engines, etc.)
+    <!-- If we don't find them, we throw an error -->
+    if !@user
+        render json: { error: 'No user by that name.' }, status: :unauthorized
+    else
+        <!-- If their password is wrong, we throw an error -->
+        if !@user.authenticate params[:password]
+            render json: { error: 'Wrong password brah!' }, status: :unauthorized
+        else
+            <!-- Otherwise, we're good to go -->
+            render json: { message: 'Right on bud!' }, status: :created
+        end
+    end
+end
+```
 
-* Deployment instructions
+- Create a token
 
-* ...
+  - Sign it
+  - Send it
+
+```
+def login
+    @user = User.find_by({ username: params[:username] })
+
+    if !@user
+        render json: { error: 'No user by that name.' }, status: :unauthorized
+    else
+        if !@user.authenticate params[:password]
+            render json: { error: 'Wrong password brah!' }, status: :unauthorized
+        else
+            payload = {
+                <!-- iat: Time.now.to_i, -->
+                user_id: @user.id
+            }
+
+            secret = 'topsecret'
+
+            token = JWT.encode payload, secret
+
+            <!-- render json: { message: 'Right on bud!' }, status: :created -->
+            render json: { token: token }, status: :created
+        end
+    end
+  end
+
+```
